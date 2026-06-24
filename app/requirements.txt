@@ -1,0 +1,27 @@
+mediapipe>=0.10.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+fastapi>=0.110.0
+mangum>=0.17.0
+pydantic>=2.0.0
+uvicorn>=0.29.0
+awslambdaric>=2.0.11
+
+# Build
+# docker build -t gaze:media .
+# docker tag gaze:media 212315285733.dkr.ecr.us-east-1.amazonaws.com/proctorparhai/gaze:latest
+
+# aws ecr get-login-password --region us-east-1 --profile new | docker login --username AWS --password-stdin 212315285733.dkr.ecr.us-east-1.amazonaws.com
+
+# aws sts get-caller-identity --profile new
+
+# # Push
+# docker push 212315285733.dkr.ecr.us-east-1.amazonaws.com/proctorparhai/gaze:latest
+
+# # Update Lambda
+# aws lambda update-function-code --function-name gaze \
+#   --image-uri 212315285733.dkr.ecr.us-east-1.amazonaws.com/proctorparhai/gaze:latest \
+#   --region us-east-1 --profile new
+
+
+# aws lambda update-function-code --function-name gaze --image-uri 212315285733.dkr.ecr.us-east-1.amazonaws.com/proctorparhai/gaze:latest --region us-east-1 --profile new   
