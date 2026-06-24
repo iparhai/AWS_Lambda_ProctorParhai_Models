@@ -1,0 +1,68 @@
+# ========= Stage 1: Builder =========
+FROM python:3.12-slim-bookworm AS builder
+
+WORKDIR /build
+
+# Install only necessary build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc python3-dev curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download AWS Lambda Runtime Interface Emulator
+RUN curl -Lo /aws-lambda-rie \
+    https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie && \
+    chmod +x /aws-lambda-rie
+
+# Copy only requirements first to enable caching
+COPY requirements.txt .
+
+# Build wheels for dependencies
+RUN pip install --upgrade pip setuptools wheel && \
+    pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+
+# ========= Stage 2: Runtime =========
+FROM python:3.12-slim-bookworm
+
+LABEL maintainer="ProctorParhai" \
+      description="Lambda container for face proctoring"
+
+# Create non-root user
+RUN useradd -m -s /bin/bash sandboxuser
+
+# Install runtime dependencies (OpenCV, libGL)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create cache directories with full permissions
+RUN mkdir -p /tmp/ultralytics /tmp/torch /tmp/facenet_pytorch && \
+    chmod -R 777 /tmp
+
+# Set environment variables for model cache paths
+ENV YOLO_CONFIG_DIR=/tmp/ultralytics \
+    TORCH_HOME=/tmp/torch \
+    FACENET_PYTORCH_HOME=/tmp/facenet_pytorch \
+    PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code and Lambda entrypoint
+COPY --from=builder /aws-lambda-rie /usr/local/bin/aws-lambda-rie
+COPY --from=builder /wheels /wheels
+COPY . /app
+
+# Install Python deps from built wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
+    rm -rf /wheels ~/.cache/pip && \
+    chmod +x /app/lambda_entry_script.sh
+
+# Expose port for Lambda
+EXPOSE 8080
+
+# Set user (non-root)
+USER sandboxuser
+
+# Lambda-compatible entrypoint
+ENTRYPOINT ["/app/lambda_entry_script.sh"]
+CMD ["main.handler"]

@@ -1,0 +1,41 @@
+# ========= Stage 1: Builder =========
+FROM python:3.12-slim-bookworm AS builder
+
+WORKDIR /build
+
+# Install only necessary build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc python3-dev curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download AWS Lambda Runtime Interface Emulator
+RUN curl -Lo /aws-lambda-rie \
+    https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie && \
+    chmod +x /aws-lambda-rie
+
+# Upgrade pip and wheel tools
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel && \
+    pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+
+# ========= Stage 2: Runtime =========
+FROM python:3.12-slim-bookworm
+
+# Create non-root user
+RUN useradd -m -s /bin/bash sandboxuser
+
+# Install curl for downloading aws-lambda-rie and libgl1 for OpenCV
+RUN apt-get update && apt-get install -y --no-install-recommends curl libgl1 && rm -rf /var/lib/apt/lists/*
+
+# Copy app code
+COPY --from=builder /wheels /wheels
+COPY --from=builder /aws-lambda-rie /usr/local/bin/aws-lambda-rie
+COPY . /app
+
+# Install Python dependencies from wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r /app/requirements.txt && \
+    rm -rf /wheels ~/.cache/pip
+
+WORKDIR /app
+RUN chmod +x /app/lambda_entry_script.sh
+CMD ["/app/lambda_entry_script.sh", "main.handler"]

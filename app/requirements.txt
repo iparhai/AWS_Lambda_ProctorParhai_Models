@@ -1,0 +1,21 @@
+torch==2.2.2+cpu        # Official CPU wheel from PyTorch
+torchvision==0.17.2+cpu # Match torch version
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+facenet-pytorch==2.6.0
+numpy>=1.26.0
+opencv-python-headless>=4.5.0   # Smaller than opencv-python
+mtcnn>=0.1.0
+scipy>=1.7.0
+pillow>=8.0.0
+fastapi[standard]
+mangum
+awslambdaric
+uvicorn
+python-multipart
+scikit-learn
+onnx
+onnxruntime==1.17.3         # Use non-GPU release
+ultralytics                 # This still includes YOLO, consider freezing model separately if size too big
+requests
+# matplotlib — remove if not used in Lambda
+# pandas — optional, heavy
