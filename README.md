@@ -1,43 +1,18 @@
 # AWS Lambda Model Functions
 
-This folder contains local backups of three AWS Lambda container-image functions.
-
-The functions were pulled from Amazon ECR and saved locally so the code and model files can be reviewed, backed up, or moved to GitHub.
+This repo contains three AWS Lambda container-image functions.
 
 ## Quick task/model map
 
 | Task                                           | Model / tool used                                            |
 | ---------------------------------------------- | ------------------------------------------------------------ |
-| Run submitted code                             | No ML model. Uses Python, Node.js, Java, C, and C++ runtimes |
+| No ML model. Uses Python, Node.js, Java, C, and C++ runtimes
 | Detect faces in an image                       | `FaceProctoring/app/app/checkpoints/yolov11n-face.onnx`    |
 | Create face embeddings for identity comparison | `FaceProctoring/app/app/checkpoints/embedding_model.onnx`  |
 | Compare input face with reference faces        | `embedding_model.onnx` + cosine similarity                 |
 | Detect objects during proctoring               | `FaceProctoring/app/app/checkpoints/yolov8n-obj.onnx`      |
 | Detect face/iris landmarks for gaze tracking   | `gaze/app/src/gaze_tracking/face_landmarker.task`          |
 | Decide gaze direction                          | MediaPipe landmarks + custom gaze-ratio logic in Python      |
-
-## Folder overview
-
-```text
-aws-lambda-functions/
-  compiler/
-    app/
-    compiler-image.tar
-    compiler-rootfs.tar
-    compiler-image-inspect.json
-
-  FaceProctoring/
-    app/
-    FaceProctoring-image.tar
-    FaceProctoring-rootfs.tar
-    FaceProctoring-image-inspect.json
-
-  gaze/
-    app/
-    gaze-image.tar
-    gaze-rootfs.tar
-    gaze-image-inspect.json
-```
 
 ## 1. `compiler`
 
@@ -73,7 +48,6 @@ Main endpoints:
 
 Model used: none.
 
-Important note: this function runs user-submitted code, so it should be treated carefully. It needs strong sandboxing, timeouts, authentication, and resource limits before public production use.
 
 ## 2. `FaceProctoring`
 
@@ -177,29 +151,3 @@ Output includes:
 - face bounding box
 - eye details
 - gaze metrics
-
-## Backup files
-
-Each function folder contains:
-
-| File/folder              | Meaning                                                                               |
-| ------------------------ | ------------------------------------------------------------------------------------- |
-| `app/`                 | readable application code and model files copied from the container working directory |
-| `*-image.tar`          | full Docker image backup                                                              |
-| `*-rootfs.tar`         | full exported Linux container filesystem backup                                       |
-| `*-image-inspect.json` | Docker image metadata                                                                 |
-
-The `.tar` files are large. If moving this to GitHub, consider using Git LFS or leaving the `.tar` files out of the repository.
-
-## GitHub cleanup suggestion
-
-Before pushing to GitHub, consider excluding:
-
-```text
-*.tar
-**/venv*/
-**/__pycache__/
-*.pyc
-```
-
-Also review the code for secrets, tokens, AWS account IDs, or environment variables before making the repository public.
