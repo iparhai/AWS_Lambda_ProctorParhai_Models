@@ -1,0 +1,1 @@
+embedding_model.onnx is not uploaded here due to big size
